@@ -1,0 +1,35 @@
+from math import sqrt
+
+MCTSexploration = sqrt(2)
+maxBoardVal = 100
+miniMaxDefaultDepth = 1
+trainingRecursionCount = 200 #how many cycles used in MCTS
+trainingSetSize = 20 #how many games are added to training set by champion
+fullTrainingSetSize = 1000 # maximum games in training set
+challengerSamples = 1000 #how many boards new challenger is trained on
+showDownSize = 50 #how many games played between challenger and champion
+winRatio = 55 / 45 #ratio of wins to losses to become new champion
+toolbarWidth = 40 #tool bar width
+
+class node():
+	def __init__(self, board, isRedTurn, parent, rowNum, colNum):
+		self.parent = parent
+		self.isRedTurn = isRedTurn
+		self.children = []
+		self.board = board
+		self.rowNum = rowNum
+		self.colNum = colNum
+		
+def maxelements(seq):#from https://stackoverflow.com/questions/3989016/how-to-find-all-positions-of-the-maximum-value-in-a-list
+    #Return list of position(s) of largest element
+    max_indices = []
+    if seq:
+        max_val = seq[0]
+        for i,val in ((i,val) for i,val in enumerate(seq) if val >= max_val):
+            if val == max_val:
+                max_indices.append(i)
+            else:
+                max_val = val
+                max_indices = [i]
+
+    return max_indices
