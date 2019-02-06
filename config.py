@@ -1,15 +1,15 @@
 from math import sqrt
 
-MCTSexploration = sqrt(2)
+#MCTSexploration = sqrt(2) #standard value which determines how likely a node is to be explored, given how many times it has been explored vs the rest of the tree (larger value means more likely to select unexplored nodes), results in overly greedy play for connect 4
+MCTSexploration = .5 #that's better
 maxBoardVal = 100
 miniMaxDefaultDepth = 1
-trainingRecursionCount = 200 #how many cycles used in MCTS
+trainingRecursionCount = 200 #how many selection cycles used in MCTS
 trainingSetSize = 20 #how many games are added to training set by champion
 fullTrainingSetSize = 1000 # maximum games in training set
 challengerSamples = 1000 #how many boards new challenger is trained on
 showDownSize = 50 #how many games played between challenger and champion
 winRatio = 55 / 45 #ratio of wins to losses to become new champion
-toolbarWidth = 40 #tool bar width
 
 class node():
 	def __init__(self, board, isRedTurn, parent, rowNum, colNum):

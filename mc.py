@@ -8,8 +8,8 @@ class monteTree():
 		self.root = monteNode(board, isRedTurn)
 		self.polModel = polModel
 		self.valModel = valModel
-		self.c = config.MCTSexploration
 		if self.polModel:
+			self.root.nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(self.root.board.board, self.root.isRedTurn)]))).tolist()[0][1]
 			self.nnExpand(self.root)
 		else:
 			self.expand(self.root, randomExpand)
@@ -18,7 +18,7 @@ class monteTree():
 		return "<tree representation>"
 		
 	def __str__(self, maxLevel = 100):
-		return self.root.__str__(maxLevel, 0)
+		return self.root.__str__(0, maxLevel, 0)
 	
 	def expand(self, parentNode, randomExpand):
 		if not randomExpand:
@@ -43,35 +43,42 @@ class monteTree():
 	def nnExpand(self, parentNode):
 		boardInputs = NNfunctions.boardToInputs(parentNode.board.board, parentNode.isRedTurn)
 		moveProbs = (self.polModel.predict(numpy.array([boardInputs]))).tolist()[0]
-		parentNode.nnVal = (self.valModel.predict(numpy.array([boardInputs]))).tolist()[0][1]#[0] if 1 cat, [0][1] if 3 cat
+		#parentNode.nnVal = (self.valModel.predict(numpy.array([boardInputs]))).tolist()[0][1]#[0] if 1 cat, [0][1] if 3 cat move to tree __init__
 		for colNum in parentNode.board.legalMoves:
 			newBoard, childRow, childCol = parentNode.board.serveNextState(colNum, parentNode.isRedTurn)
 			childNode = monteNode(newBoard, not parentNode.isRedTurn, parentNode, moveProbs[colNum], childRow, childCol)
-			if childNode.board.checkWin(childNode.rowNum, childNode.colNum, childNode.isRedTurn):
-				childNode.nnVal = 1
+			nnVal = 0
+			if childNode.board.checkWin(childNode.rowNum, childNode.colNum, not childNode.isRedTurn):
+				nnVal = 1
+				childNode.boardCompleted = True
+				childNode.isWin = True
 			elif parentNode.board.checkDraw():
-				childNode.nnVal = 0
+				nnVal = 0.5
+				childNode.boardCompleted = True
 			else:
-				childNode.nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][1]
+				nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][1]
 			parentNode.children.append(childNode)
-			monteTree.nnBackProp(childNode, childNode.isRedTurn, childNode.nnVal)
+			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal)
 		parentNode.expanded = True
 		
 	def selectRec(self, node):
 		if node.expanded:
 			valList = []
 			for child in node.children:
-				valList.append((child.num / child.den) + self.c * math.sqrt(math.log(self.root.den) / child.den))
+				valList.append((child.num / child.den) + config.MCTSexploration * math.sqrt(math.log(self.root.den) / child.den))
 			return self.selectRec(node.children[random.choice(config.maxelements(valList))])
 		else:
 			self.expand(node, False)
 			return node
 			
 	def nnSelectRec(self, node):
-		if node.expanded:
+		if node.boardCompleted:
+			monteTree.nnBackProp(node, node.isRedTurn, 1 if node.isWin else .5)
+			return node
+		elif node.expanded:
 			valList = []
 			for child in node.children:
-				valList.append((child.nnVal / child.den) + self.c * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
+				valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
 			return self.nnSelectRec(node.children[random.choice(config.maxelements(valList))])
 		else:
 			self.nnExpand(node)
@@ -89,7 +96,7 @@ class monteTree():
 			monteTree.backProp(currNode.parent, isRedTurn, isWin)
 			
 	def nnBackProp(currNode, isRedTurn, nnVal):
-		if currNode.isRedTurn != isRedTurn:
+		if currNode.isRedTurn == isRedTurn:
 			currNode.nnVal += nnVal
 		currNode.den += 1
 		if currNode.parent:
@@ -100,8 +107,8 @@ class monteTree():
 			valList = []
 			for child in self.root.children:
 				valList.append(child.den)
-			self.root = self.root.children[random.choice(config.maxelements(valList))]
-			return self.root.board, self.root.rowNum, self.root.colNum
+			moveChoice = self.root.children[random.choice(config.maxelements(valList))]
+			return moveChoice.board, moveChoice.rowNum, moveChoice.colNum
 		else:
 			raise Exception('The node has no children.')
 				
@@ -114,12 +121,14 @@ class monteNode(config.node):
 		self.nnProb = nnProb
 		self.nnVal = 0
 		self.expanded = False
+		self.boardCompleted = False
+		self.isWin = False
 		
-	def __str__(self, maxLevel = 100, level=0):
-		ret = "\t"*level + str(self.nnVal)[:4] + " / " + str(self.den) +"\n"
+	def __str__(self, colNum, maxLevel = 100, level=0):
+		ret = "\t"*level + "(" + str(colNum) + ") " + str(self.nnVal)[:4] + " / " + str(self.den) +"\n"
 		if level < maxLevel:
-			for child in self.children:
-				ret += child.__str__(maxLevel, level+1)
+			for childCol in range(len(self.children)):
+				ret += self.children[childCol].__str__(childCol, maxLevel, level+1)
 		return ret
 	
 # valModel = tf.keras.models.load_model("models/value3cat/simple/the_value_champ")

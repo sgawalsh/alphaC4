@@ -97,20 +97,28 @@ def modelShowdown():
 	print("Showdown!!!")
 	for _ in tqdm(range(config.showDownSize)):
 		champFirst = not champFirst# toggle first move
+		testMode = False
 		isRedTurn = champFirst
 		currBoardState = engine.board()
 		while True:
 			currPlayer = mc.monteTree(currBoardState, isRedTurn, champPol, champVal) if isRedTurn else mc.monteTree(currBoardState, isRedTurn, challPol, challVal)
 			for _2 in range(config.trainingRecursionCount):
-				currPlayer.nnSelectRec(currPlayer.root)	
+				currPlayer.nnSelectRec(currPlayer.root)
+				#currPlayer.root.board.printBoard()
+				#print(currPlayer.root.__str__(15))
+				if testMode:
+					print(currPlayer.root.__str__(15))
+					pdb.set_trace()
 			currBoardState, rowNum, colNum = currPlayer.makeMove()
 			currBoardState.printBoard()
+			#print(currPlayer.root.__str__(0,2))
+			pdb.set_trace()
 			if currBoardState.checkWin(rowNum, colNum, isRedTurn):
 				if not isRedTurn:
 					print("Challenger wins!")
 					challWins += 1
 				else:
-					("Champion wins!")
+					print("Champion wins!")
 					champWins += 1
 				break
 			elif currBoardState.checkDraw():
@@ -135,6 +143,7 @@ def modelShowdown():
 		challPol.save("models//policy//simple//the_simple_champ")
 			
 			
-#createTrainingSet()
-#createChallengerPair()
-#modelShowdown()
+while True:
+	#createTrainingSet()
+	#createChallengerPair()
+	modelShowdown()
