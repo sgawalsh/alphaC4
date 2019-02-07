@@ -75,7 +75,7 @@ class monteTree():
 		if node.boardCompleted:
 			monteTree.nnBackProp(node, node.isRedTurn, 1 if node.isWin else .5)
 			return node
-		elif node.expanded:
+		elif node.expanded and node.children:
 			valList = []
 			for child in node.children:
 				valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
@@ -102,13 +102,16 @@ class monteTree():
 		if currNode.parent:
 			monteTree.nnBackProp(currNode.parent, isRedTurn, nnVal)
 			
-	def makeMove(self):
+	def makeMove(self, resetRoot = False):
 		if self.root.children:
 			valList = []
 			for child in self.root.children:
 				valList.append(child.den)
 			moveChoice = self.root.children[random.choice(config.maxelements(valList))]
-			return moveChoice.board, moveChoice.rowNum, moveChoice.colNum
+			if resetRoot:
+				self.root = moveChoice
+			else:
+				return moveChoice.board, moveChoice.rowNum, moveChoice.colNum
 		else:
 			raise Exception('The node has no children.')
 				

@@ -31,16 +31,16 @@ def createTrainingSet(firstRun = False):
 			boardMovePair = [myTree.root.board, myTree.root.isRedTurn]
 			for _2 in range(config.trainingRecursionCount):#build tree
 				myTree.nnSelectRec(myTree.root)
-			resBoard = myTree.makeMove()[0]# return next board
+			myTree.makeMove(True)# set root to next move
 			#myTree.root.board.printBoard()
-			if resBoard.checkWin(myTree.root.rowNum, myTree.root.colNum, not myTree.root.isRedTurn):#check winner
+			if myTree.root.board.checkWin(myTree.root.rowNum, myTree.root.colNum, not myTree.root.isRedTurn):#check winner
 				currSet.hasWinner = True
 				currSet.redWins = not myTree.root.isRedTurn
 				trainingSet.append(currSet)
 				currSet = gameSet(currSet.gameID + 1)
 				break
-			elif resBoard.checkDraw():
-				trainingSet.append[currSet]
+			elif myTree.root.board.checkDraw():
+				trainingSet.append(currSet)
 				currSet = gameSet(currSet.gameID + 1)
 				break
 			else:
