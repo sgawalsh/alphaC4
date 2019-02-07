@@ -110,9 +110,9 @@ def modelShowdown():
 					print(currPlayer.root.__str__(15))
 					pdb.set_trace()
 			currBoardState, rowNum, colNum = currPlayer.makeMove()
-			currBoardState.printBoard()
+			#currBoardState.printBoard()
 			#print(currPlayer.root.__str__(0,2))
-			pdb.set_trace()
+			#pdb.set_trace()
 			if currBoardState.checkWin(rowNum, colNum, isRedTurn):
 				if not isRedTurn:
 					print("Challenger wins!")
@@ -136,7 +136,7 @@ def modelShowdown():
 		Champion Wins: {}
 		Challenger Wins: {}
 		Draws: {}'''.format(config.showDownSize, champWins, challWins, drawCount))
-	pdb.set_trace()
+	#pdb.set_trace()
 	if challWins > (champWins * config.winRatio):
 		print("New champion!!")
 		challVal.save("models//value3cat//simple//the_value_champ")
@@ -144,6 +144,6 @@ def modelShowdown():
 			
 			
 while True:
-	#createTrainingSet()
-	#createChallengerPair()
+	createTrainingSet()
+	createChallengerPair()
 	modelShowdown()
