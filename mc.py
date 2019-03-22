@@ -42,6 +42,7 @@ class monteTree():
 		
 	def nnExpand(self, parentNode):
 		boardInputs = NNfunctions.boardToInputs(parentNode.board.board, parentNode.isRedTurn)
+		#pdb.set_trace()
 		moveProbs = (self.polModel.predict(numpy.array([boardInputs]))).tolist()[0]
 		#parentNode.nnVal = (self.valModel.predict(numpy.array([boardInputs]))).tolist()[0][1]#[0] if 1 cat, [0][1] if 3 cat move to tree __init__
 		for colNum in parentNode.board.legalMoves:

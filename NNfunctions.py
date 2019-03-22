@@ -51,10 +51,6 @@ def makeConvModel(model, shape, categories):
 	model.add(tf.keras.layers.Activation('relu'))
 	#model.add(tf.keras.layers.MaxPooling2D(pool_size=(1,1)))
 
-	# model.add(tf.keras.layers.Conv2D(256, (3, 3)))
-	# model.add(tf.keras.layers.Activation('relu'))
-	# model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
-
 	model.add(tf.keras.layers.Flatten())
 	model.add(tf.keras.layers.Dense(512, activation = tf.nn.relu))
 	model.add(tf.keras.layers.Dense(512, activation = tf.nn.relu))

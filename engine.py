@@ -79,10 +79,7 @@ class board:
 		return 5
 	
 	def checkWin(self, row, col, isRed):
-		if self.checkHori(row, col, isRed) or self.checkVert(row, col, isRed) or self.checkDiagAsc(row, col, isRed) or self.checkDiagDesc(row, col, isRed):
-			return True
-		else:
-			return False
+		return self.checkHori(row, col, isRed) or self.checkVert(row, col, isRed) or self.checkDiagAsc(row, col, isRed) or self.checkDiagDesc(row, col, isRed)
 		
 	def checkHori(self, row, col, isRed):
 		for i in range(4):

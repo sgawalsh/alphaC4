@@ -14,7 +14,7 @@ MODEL_INIT_MAP = {
 }
 
 simpleOrConvolutional = "simple"
-policyOrValue = "value3Cat"
+policyOrValue = "policy"
 title = "the_simple_champ"
 
 functionOutputSet = FUNCTION_OUTPUT_MAP[policyOrValue]

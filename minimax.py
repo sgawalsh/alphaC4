@@ -5,31 +5,28 @@ from tqdm import tqdm
 class miniTree():
 	def __init__(self, board, isRedTurn, maxLevel):
 		self.root = miniNode(board, isRedTurn)
-		miniTree.genTreeMM(self.root, -config.maxBoardVal, config.maxBoardVal, 0, maxLevel, False)
+		miniTree.genTreeMM(self.root, -config.maxBoardVal, config.maxBoardVal, 0, maxLevel)
 	
 	def __str__(self, maxLevel = 100):
 		return self.root.__str__(maxLevel, 0)				
 				
-	def genTreeMM(currNode, alpha, beta, currDepth, maxDepth, exploreTied):
+	def genTreeMM(currNode, alpha, beta, currDepth, maxDepth):
 		if currNode.rowNum and currNode.board.checkWin(currNode.rowNum, currNode.colNum, not currNode.isRedTurn):
-			currNode.score = (1 if(currDepth % 2) else -1) * config.maxBoardVal
+			currNode.score = (1 if(currDepth % 2) else -1) * (config.maxBoardVal + maxDepth - currDepth)
 			return currNode.score
 		elif currNode.board.checkDraw():
 			currNode.score = 0
 			return 0
 		if currDepth < maxDepth:
-			if not exploreTied and currDepth == 1:
-				currNode.score = (1 if(currDepth % 2) else -1) * config.maxBoardVal
-			for colNum in currNode.board.legalMoves[len(currNode.children):]:
+			currNode.score = (1 if(currDepth % 2) else -1) * config.maxBoardVal
+			for colNum in currNode.board.legalMoves:
 				newBoard, rowNum = currNode.board.serveNextState(colNum, currNode.isRedTurn)[:2]
 				childNode = miniNode(newBoard, not currNode.isRedTurn, currNode, rowNum, colNum)
 				currNode.children.append(childNode)
-				retScore = miniTree.genTreeMM(childNode, alpha, beta, currDepth + 1, maxDepth, exploreTied)
+				retScore = miniTree.genTreeMM(childNode, alpha, beta, currDepth + 1, maxDepth)
 				if currDepth % 2: #adjust alpha and beta if necessary
 					if retScore < currNode.score:
 						currNode.score = retScore
-						if exploreTied and currDepth == 1:
-							return currNode.score
 					if currNode.score < beta:
 						beta = currNode.score
 				else:
@@ -37,7 +34,7 @@ class miniTree():
 						currNode.score = retScore
 					if currNode.score > alpha:
 						alpha = currNode.score
-				if alpha >= beta:#just > and remove exploreTied()??
+				if alpha > beta:
 					return currNode.score
 		else: # max depth
 			currNode.setScore()
@@ -54,8 +51,6 @@ class miniTree():
 	def genGameResults(self):
 		origTurn = self.root.isRedTurn
 		while True:
-			if len(config.maxelements(self.root.getChildScores())) > 1:
-				self.exploreTied()
 			col = self.root.board.legalMoves[random.choice(config.maxelements(self.root.getChildScores()))]
 			newBoard, row, col = self.root.board.serveNextState(col, self.root.isRedTurn)
 			if newBoard.checkWin(row, col, self.root.isRedTurn):
@@ -66,11 +61,6 @@ class miniTree():
 			elif newBoard.checkDraw():
 				return 0
 			self = miniTree(newBoard, not self.root.isRedTurn, config.miniMaxDefaultDepth)
-			
-	def exploreTied(self):
-		for child in self.root.children:
-			if child.score == self.root.score:
-				miniTree.genTreeMM(child, -config.maxBoardVal, config.maxBoardVal, 1, config.miniMaxDefaultDepth, True)
 				
 class miniNode(config.node):
 	def __init__(self, board, isRedTurn, parent = None, rowNum = None, colNum = None):
