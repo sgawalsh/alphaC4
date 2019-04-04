@@ -2,7 +2,7 @@ from engine import board, cell
 import config, pdb, random, numpy, time
 from tqdm import tqdm
 
-class miniTree():
+class miniTree():# minimax tree class, contains minimax algorithm
 	def __init__(self, board, isRedTurn, maxLevel):
 		self.root = miniNode(board, isRedTurn)
 		miniTree.genTreeMM(self.root, -config.maxBoardVal, config.maxBoardVal, 0, maxLevel)
@@ -62,7 +62,7 @@ class miniTree():
 				return 0
 			self = miniTree(newBoard, not self.root.isRedTurn, config.miniMaxDefaultDepth)
 				
-class miniNode(config.node):
+class miniNode(config.node):#contains heuristic fn
 	def __init__(self, board, isRedTurn, parent = None, rowNum = None, colNum = None):
 		config.node.__init__(self, board, isRedTurn, parent, rowNum, colNum)
 		self.score = 0
@@ -120,7 +120,6 @@ def genBoardActionPairs(sampleSize, passFn):
 	boards = []
 	returnVals = []
 	
-	
 	for _1 in tqdm(range(sampleSize)):
 		isRedTurn = random.choice([True, False])
 		#for _ in range(random.randint(0,15)):
@@ -133,7 +132,3 @@ def genBoardActionPairs(sampleSize, passFn):
 		boards.append([board(simBoard.board, simBoard.legalMoves), isRedTurn])
 		returnVals.append(passFn(myTree))
 	return (boards, returnVals)
-
-# myTree = miniTree(board(), False, config.miniMaxDefaultDepth)
-# print(myTree)
-# print(myTree.root.getChildScores())

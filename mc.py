@@ -2,50 +2,40 @@ from engine import board, cell
 import pdb, random, math, config, NNfunctions, numpy, tensorflow as tf
 from tqdm import tqdm
 
-class monteTree():
-	#select node, generate child nodes with legal moves, run random simulations on each node, backpropagate with results
+class monteTree(): #monte tree class, can function with and without neural nets
 	def __init__(self, board, isRedTurn, polModel = None, valModel = None, randomExpand = False):
 		self.root = monteNode(board, isRedTurn)
 		self.polModel = polModel
 		self.valModel = valModel
-		if self.polModel:
+		if self.valModel:
 			self.root.nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(self.root.board.board, self.root.isRedTurn)]))).tolist()[0][1]
 			self.nnExpand(self.root)
 		else:
 			self.expand(self.root, randomExpand)
-		
+	
 	def __repr__(self):
 		return "<tree representation>"
-		
+	
 	def __str__(self, maxLevel = 100):
 		return self.root.__str__(0, maxLevel, 0)
 	
-	def expand(self, parentNode, randomExpand):
-		if not randomExpand:
-			model = tf.keras.models.load_model("models/the_simple_champ")
-		for colNum in parentNode.board.legalMoves:
-			childNode = monteNode(parentNode.board.serveNextState(colNum, parentNode.isRedTurn)[0], not parentNode.isRedTurn, parentNode)
-			parentNode.children.append(childNode)
-			simBoard = childNode.board
-			isRedTurn = childNode.isRedTurn
-			while True:
-				# simBoard.printBoard()
-				# pdb.set_trace()
-				simBoard, rowNum, colNum  = simBoard.serveNextState(random.choice(simBoard.legalMoves) if randomExpand else NNfunctions.genMove(model, simBoard), isRedTurn)
-				if simBoard.checkWin(rowNum, colNum, isRedTurn):
-					monteTree.backProp(childNode, isRedTurn, True)
-					break
-				elif simBoard.checkDraw():
-					monteTree.backProp(childNode, isRedTurn, False)
-					break
-		parentNode.expanded = True
-		
-	def nnExpand(self, parentNode):
+	def nnSelectRec(self, node):# drill through tree until unexpanded node is reached, expand and backpropagate values through tree
+		if node.boardCompleted:
+			monteTree.nnBackProp(node, node.isRedTurn, 1 if node.isWin else .5)
+			return node
+		elif node.expanded and node.children:
+			valList = []
+			for child in node.children:
+				valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
+			return self.nnSelectRec(node.children[random.choice(config.maxelements(valList))])#call fn recursively on node with largest value
+		else:
+			self.nnExpand(node)
+			return node
+	
+	def nnExpand(self, parentNode):#create child node for each legal move, get value if board is an end state, or use NN to generate a value, backprop for each new child
 		boardInputs = NNfunctions.boardToInputs(parentNode.board.board, parentNode.isRedTurn)
-		#pdb.set_trace()
-		moveProbs = (self.polModel.predict(numpy.array([boardInputs]))).tolist()[0]
-		#parentNode.nnVal = (self.valModel.predict(numpy.array([boardInputs]))).tolist()[0][1]#[0] if 1 cat, [0][1] if 3 cat move to tree __init__
-		for colNum in parentNode.board.legalMoves:
+		moveProbs = (self.polModel.predict(numpy.array([boardInputs]))).tolist()[0]#use policy NN to get initial move probabilities
+		for colNum in parentNode.board.legalMoves:#create child node for each legal move
 			newBoard, childRow, childCol = parentNode.board.serveNextState(colNum, parentNode.isRedTurn)
 			childNode = monteNode(newBoard, not parentNode.isRedTurn, parentNode, moveProbs[colNum], childRow, childCol)
 			nnVal = 0
@@ -57,11 +47,36 @@ class monteTree():
 				nnVal = 0.5
 				childNode.boardCompleted = True
 			else:
-				nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][1]
+				nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][1]#use value NN to get board value
 			parentNode.children.append(childNode)
-			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal)
+			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal)#backprop for each new child
 		parentNode.expanded = True
 		
+	def nnBackProp(currNode, isRedTurn, nnVal):
+		if currNode.isRedTurn == isRedTurn:# adjust value of boards with same player turn
+			currNode.nnVal += nnVal
+		currNode.den += 1
+		if currNode.parent:#call recursively until root is reached
+			monteTree.nnBackProp(currNode.parent, isRedTurn, nnVal)
+	
+	def expand(self, parentNode, randomExpand):
+		if not randomExpand:
+			model = tf.keras.models.load_model("models/the_simple_champ")
+		for colNum in parentNode.board.legalMoves:
+			childNode = monteNode(parentNode.board.serveNextState(colNum, parentNode.isRedTurn)[0], not parentNode.isRedTurn, parentNode)
+			parentNode.children.append(childNode)
+			simBoard = childNode.board
+			isRedTurn = childNode.isRedTurn
+			while True:
+				simBoard, rowNum, colNum  = simBoard.serveNextState(random.choice(simBoard.legalMoves) if randomExpand else NNfunctions.genMove(model, simBoard), isRedTurn)
+				if simBoard.checkWin(rowNum, colNum, isRedTurn):
+					monteTree.backProp(childNode, isRedTurn, True)
+					break
+				elif simBoard.checkDraw():
+					monteTree.backProp(childNode, isRedTurn, False)
+					break
+		parentNode.expanded = True
+	
 	def selectRec(self, node):
 		if node.expanded:
 			valList = []
@@ -70,19 +85,6 @@ class monteTree():
 			return self.selectRec(node.children[random.choice(config.maxelements(valList))])
 		else:
 			self.expand(node, False)
-			return node
-			
-	def nnSelectRec(self, node):
-		if node.boardCompleted:
-			monteTree.nnBackProp(node, node.isRedTurn, 1 if node.isWin else .5)
-			return node
-		elif node.expanded and node.children:
-			valList = []
-			for child in node.children:
-				valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
-			return self.nnSelectRec(node.children[random.choice(config.maxelements(valList))])
-		else:
-			self.nnExpand(node)
 			return node
 			
 	def backProp(currNode, isRedTurn, isWin):
@@ -95,14 +97,7 @@ class monteTree():
 				
 		if currNode.parent:
 			monteTree.backProp(currNode.parent, isRedTurn, isWin)
-			
-	def nnBackProp(currNode, isRedTurn, nnVal):
-		if currNode.isRedTurn == isRedTurn:
-			currNode.nnVal += nnVal
-		currNode.den += 1
-		if currNode.parent:
-			monteTree.nnBackProp(currNode.parent, isRedTurn, nnVal)
-			
+	
 	def makeMove(self, resetRoot = False):
 		if self.root.children:
 			valList = []
@@ -115,8 +110,7 @@ class monteTree():
 				return moveChoice.board, moveChoice.rowNum, moveChoice.colNum
 		else:
 			raise Exception('The node has no children.')
-				
-		
+	
 class monteNode(config.node):
 	def __init__(self, board, isRedTurn, parent = None, nnProb = 0, rowNum = 0, colNum = 0):
 		config.node.__init__(self, board, isRedTurn, parent, rowNum, colNum)
@@ -127,18 +121,10 @@ class monteNode(config.node):
 		self.expanded = False
 		self.boardCompleted = False
 		self.isWin = False
-		
+	
 	def __str__(self, colNum, maxLevel = 100, level=0):
 		ret = "\t"*level + "(" + str(colNum) + ") " + str(self.nnVal)[:4] + " / " + str(self.den) +"\n"
 		if level < maxLevel:
 			for childCol in range(len(self.children)):
 				ret += self.children[childCol].__str__(childCol, maxLevel, level+1)
 		return ret
-	
-# valModel = tf.keras.models.load_model("models/value3cat/simple/the_value_champ")
-# polModel = tf.keras.models.load_model("models/policy/simple/the_simple_champ")
-# myTree = monteTree(board(), True, polModel, valModel, False)
-# for _ in tqdm(range(config.trainingRecursionCount)):
-	# selectNode = myTree.nnSelectRec(myTree.root)
-	
-# print(myTree.root.__str__(1))

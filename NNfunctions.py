@@ -3,6 +3,8 @@ import numpy, minimax, pickle, os, pdb, random, config
 from keras.utils import np_utils
 from sklearn.preprocessing import MinMaxScaler
 
+#handles general NN functions, transfering board state to inputs and vice versa, creating basic models
+
 def getConv(boardList):
 	boardArrs = []
 	for board in boardList:
@@ -110,10 +112,3 @@ def getLegalMoveProbs(model, boardInputs):
 def scaleResults(results):
 	scaler = MinMaxScaler(feature_range = (0, 0.9999))
 	return scaler.fit_transform(numpy.array(results).reshape(-1, 1))
-	
-	
-	
-	
-	
-	
-	

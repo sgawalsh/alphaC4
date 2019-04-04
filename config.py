@@ -1,5 +1,7 @@
 from math import sqrt
 
+#contains config values that determine several import behavious of MCTS and selfplay learning functions
+
 #MCTSexploration = sqrt(2) #standard value which determines how likely a node is to be explored, given how many times it has been explored vs the rest of the tree (larger value means more likely to select unexplored nodes), results in overly greedy play for connect 4
 MCTSexploration = .5 #that's better
 maxBoardVal = 100
@@ -8,7 +10,7 @@ trainingRecursionCount = 50 #how many selection cycles used in MCTS
 trainingSetSize = 50 #how many games are added to training set by champion each iteration
 fullTrainingSetSize = 1000 # maximum games in training set
 challengerSamples = 1000 #how many boards new challenger is trained on
-showDownSize = 20 #how many games played between challenger and champion
+showDownSize = 50 #how many games played between challenger and champion
 winRatio = 55 / 45 #ratio of wins to losses to become new champion
 champArrayLength = 30 #number of former champions recorded
 

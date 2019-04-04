@@ -1,6 +1,6 @@
 import pdb, config, random
 
-class board:
+class board:# board class, contains game state and handles changing board state, checks for end-game conditions
 
 	def __init__(self, prevBoard = None, legalMoves = None):
 		self.board = []
@@ -148,7 +148,7 @@ class cell:
 		self.isFilled = isFilled
 		self.isRed = isRed
 		
-def runGame():
+def runGame(): #mini test fn to run game between two players in console
 	myBoard = board()
 
 	gameOver = False
@@ -159,7 +159,7 @@ def runGame():
 		rowNum = myBoard.dropPiece(colNum, isRedTurn)
 		myBoard.printBoard()
 		if myBoard.checkWin(rowNum, colNum, isRedTurn):
-			print("The game was won by someone!!! I don't know who though.")
+			print("The game was won by " + ("Red" if isRedTurn else "Yellow") + "!")
 			gameOver = True
 		elif myBoard.checkDraw():
 			print("It's a draw!")

@@ -22,13 +22,11 @@ modelInitFn = MODEL_INIT_MAP[simpleOrConvolutional]
 
 boards, retData = NNfunctions.getPickle(functionOutputSet[3], functionOutputSet[0], config.miniMaxDefaultDepth, 1000, functionOutputSet[1])
 
-pdb.set_trace()
-
 model = tf.keras.models.Sequential()
 modelInitFn(model, boards.shape[1:], functionOutputSet[1])
 model.compile(optimizer = 'adam', loss = functionOutputSet[2], metrics = ['accuracy'])
 model.fit(boards, retData, epochs = 3, batch_size = 500)
-#model.summary()
+model.summary()
 
 boards_test, retData_test = NNfunctions.getPickle(functionOutputSet[3] + "Test", functionOutputSet[0], config.miniMaxDefaultDepth, 100, functionOutputSet[1])
 
