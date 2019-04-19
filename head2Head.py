@@ -1,7 +1,7 @@
 import mc, engine
 from tqdm import tqdm
 
-def head2Head(champVal, champPol, challVal, challPol, showDownSize, trainingRecursionCount1, trainingRecursionCount2 = None):# play selected amount of games between two models, return win counts
+def head2Head(name1, name2, champVal, champPol, challVal, challPol, showDownSize, trainingRecursionCount1, trainingRecursionCount2 = None):# play selected amount of games between two models, return win counts
 	if trainingRecursionCount2 == None:
 		trainingRecursionCount2 = trainingRecursionCount1
 	challWins = 0
@@ -15,16 +15,16 @@ def head2Head(champVal, champPol, challVal, challPol, showDownSize, trainingRecu
 		isRedTurn = champFirst
 		currBoardState = engine.board()
 		while True:
-			currPlayer = mc.monteTree(currBoardState, isRedTurn, champPol, champVal) if isRedTurn else mc.monteTree(currBoardState, isRedTurn, challPol, challVal)
+			currPlayer = mc.monteTree(currBoardState, True, champPol, champVal) if isRedTurn else mc.monteTree(currBoardState, False, challPol, challVal)
 			for _2 in range(trainingRecursionCount1 if isRedTurn else trainingRecursionCount2):
 				currPlayer.nnSelectRec(currPlayer.root)
 			currBoardState, rowNum, colNum = currPlayer.makeMove()
 			if currBoardState.checkWin(rowNum, colNum, isRedTurn):
 				if not isRedTurn:
-					print("\nChallenger wins!")
+					print("\n" + name1 + " wins!")
 					challWins += 1
 				else:
-					print("\nChampion wins!")
+					print("\n" + name2 + " wins!")
 					champWins += 1
 				break
 			elif currBoardState.checkDraw():
@@ -34,13 +34,13 @@ def head2Head(champVal, champPol, challVal, challPol, showDownSize, trainingRecu
 			else:
 				isRedTurn = not isRedTurn
 		print('''	Current Stats:
-		Champion Wins: {}
-		Challenger Wins: {}
-		Draws: {}'''.format(champWins, challWins, drawCount))
+		{} Wins: {}
+		{} Wins: {}
+		Draws: {}'''.format(name1, champWins, name2, challWins, drawCount))
 	print('''	End Stats:
 		Games Played: {}
-		Champion Wins: {}
-		Challenger Wins: {}
-		Draws: {}'''.format(showDownSize, champWins, challWins, drawCount))
+		{} Wins: {}
+		{} Wins: {}
+		Draws: {}'''.format(showDownSize, name1, champWins, name2, challWins, drawCount))
 		
 	return champWins, challWins, drawCount

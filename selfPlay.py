@@ -1,4 +1,4 @@
-import tensorflow as tf, mc, config, engine, pdb, random, _pickle, os, NNfunctions, numpy
+import tensorflow as tf, mc, config, engine, pdb, random, _pickle, os, NNfunctions, numpy, datetime
 from tqdm import tqdm
 from head2Head import head2Head
 from keras.utils import np_utils
@@ -64,10 +64,7 @@ def createChallengerPair(modelName):#use sample board positions from library, us
 		boardList.append([board[0].board, board[1]])
 		boardMoves.append(board[2])
 		if set.hasWinner:
-			if set.redWins == board[1]:#win
-				boardResults.append(1)
-			else:#loss
-				boardResults.append(0)
+			boardResults.append(1 if set.redWins == board[1] else 0)
 		else:#draw
 			boardResults.append(.5)
 	
@@ -88,7 +85,7 @@ def modelShowdown(modelName):#play config.showDownSize games using mcts, if chal
 	champPol = tf.keras.models.load_model(modelName + "/the_policy_champ")
 	challPol = tf.keras.models.load_model(modelName + "/the_policy_challenger")
 	
-	champWins, challWins, drawCount = head2Head(champVal, champPol, challVal, challPol, config.showDownSize, config.trainingRecursionCount)
+	champWins, challWins, drawCount = head2Head("Champion", "Challenger", champVal, champPol, challVal, challPol, config.showDownSize, config.trainingRecursionCount)
 	
 	if (challWins / champWins) > config.winRatio:
 		print("New champion!!")
@@ -110,7 +107,7 @@ def modelShowdown(modelName):#play config.showDownSize games using mcts, if chal
 		challVal.save(modelName + "//the_value_champ")
 		challPol.save(modelName + "//the_policy_champ")
 		
-def loadOrCreateModel():
+def loadOrCreateModel(): # User can select existing model, or create new one
 	folderList = os.listdir(os.path.dirname(os.path.realpath(__file__)) + "\\models")
 	if folderList:
 		print("Models:")
@@ -149,14 +146,14 @@ def loadOrCreateModel():
 				createModel(data)
 				return os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + data
 
-def createModel(modelName):
+def createModel(modelName): # User names new model and specifies shape
 	os.mkdir("models\\" + modelName)
 	print("Creating value model")
 	model = tf.keras.models.Sequential()
 	hasSimpleAsLast = [False]
 	addLayer(model, (6,7,3), hasSimpleAsLast)
 	while True:
-		userChoice = getResponseFromList("Would you like to add another layer?", ('y', 'n'))
+		userChoice = config.getResponseFromList("Would you like to add another layer?", ('y', 'n'))
 		if userChoice == 'y':
 			try:
 				addLayer(model, model.layers[len(model.layers) - 1].output_shape[1:], hasSimpleAsLast)
@@ -178,7 +175,7 @@ def createModel(modelName):
 	hasSimpleAsLast = [False]
 	addLayer(model, (6,7,3), hasSimpleAsLast)
 	while True:
-		userChoice = getResponseFromList("Would you like to add another layer?", ('y', 'n'))
+		userChoice = config.getResponseFromList("Would you like to add another layer?", ('y', 'n'))
 		if userChoice == 'y':
 			try:
 				addLayer(model, model.layers[len(model.layers) - 1].output_shape[1:], hasSimpleAsLast)
@@ -198,17 +195,38 @@ def createModel(modelName):
 	os.mkdir("models//" + modelName + "//trainingData")
 	createTrainingSet(os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + modelName, True)
 	
-def addLayer(model, shape, hasSimpleAsLast):
-	userChoice = getResponseFromList("Would you like to make a convolutional, or simple layer?", ('c', 's'))
+def loadModel(): # User selects model, selected model path is returned
+	folderList = os.listdir(os.path.dirname(os.path.realpath(__file__)) + "\\models")
+	if folderList:
+		print("Models:")
+		
+		for i, folder in enumerate(folderList):
+			print(str(i + 1) + ". " + folder)
+			
+		while True:
+			try:
+				modelInd = int(input(("Which model do you want to load?\n> ")))
+				if modelInd > len(folderList) or modelInd <= 0:
+					print("Value out of range")
+				else:
+					break
+			except ValueError:
+				print("Which model do you want to load?\n> ")
+		
+		if modelInd:
+			return os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + folderList[modelInd - 1]
+	
+def addLayer(model, shape, hasSimpleAsLast): # Adds layer to model currently being created by the user
+	userChoice = config.getResponseFromList("Would you like to make a convolutional, or simple layer?", ('c', 's'))
 	if userChoice == 'c':
 		hasSimpleAsLast[0] = False
-		filterNum = getIntResponse("How many filters should this layer have?")
-		filterDimVert = getIntResponse("What should the height of the filter be?")
-		filterDimHori = getIntResponse("What should the width of the filter be?")
-		paddingChoice = getResponseFromList("Should the padding type be same (zero padded), or valid (non-zero padded)?", ('s', 'v'))
+		filterNum = config.getIntResponse("How many filters should this layer have?")
+		filterDimVert = config.getIntResponse("What should the height of the filter be?")
+		filterDimHori = config.getIntResponse("What should the width of the filter be?")
+		paddingChoice = config.getResponseFromList("Should the padding type be same (zero padded), or valid (non-zero padded)?", ('s', 'v'))
 		model.add(tf.keras.layers.Conv2D(filterNum, (filterDimVert, filterDimHori), input_shape = shape, padding=("same" if paddingChoice == 's' else "valid")))
 		model.add(tf.keras.layers.BatchNormalization())
-		model.add(tf.keras.layers.Activation(getResponseFromList("Which activation function should the layer use?", ('elu', 'relu', 'selu', 'sigmoid', 'softplus', 'softmax', 'softsign', 'tanh'))))
+		model.add(tf.keras.layers.Activation(config.getResponseFromList("Which activation function should the layer use?", ('elu', 'relu', 'selu', 'sigmoid', 'softplus', 'softmax', 'softsign', 'tanh'))))
 	elif userChoice == 's':
 		activationDict = {
 			"el" : tf.nn.elu,
@@ -220,36 +238,88 @@ def addLayer(model, shape, hasSimpleAsLast):
 			"ss" : tf.nn.softsign,
 			"tn" : tf.nn.tanh
 		}
-		nuerons = getIntResponse("How many neurons should this layer have?")
-		layerActivation = activationDict[getResponseFromList("What activation function should the layer use? elu, relu, selu, sigmoid, softplus, softmax, softsign, or tanh?", ('el', 'rl', 'sl', 'sg', 'sm', 'sp', 'ss', 'tn'))]
+		nuerons = config.getIntResponse("How many neurons should this layer have?")
+		layerActivation = activationDict[config.getResponseFromList("What activation function should the layer use? elu, relu, selu, sigmoid, softplus, softmax, softsign, or tanh?", ('el', 'rl', 'sl', 'sg', 'sm', 'sp', 'ss', 'tn'))]
 		if not hasSimpleAsLast[0]:
 			model.add(tf.keras.layers.Flatten(input_shape=shape))
 		model.add(tf.keras.layers.Dense(nuerons, activation = layerActivation))
 		hasSimpleAsLast[0] = True
+
+def autoSelfplay(): # user loads model, function cycles updating training set, creating challenger, and performing showdowns
+	modelPath = loadOrCreateModel()
+
+	while True:
+		createTrainingSet(modelPath)
+		createChallengerPair(modelPath)
+		modelShowdown(modelPath)
 		
-def getResponseFromList(question, answers):
-	while True:
-		data = input(question + " " + str(answers) + "\n> ")
-		if data:
-			if data in answers:
-				return data
-			else:
-				print("Please choose an option from the list")
+def generationTournament(): # Performs a round robin tournament in which each previous saved champion and current champion play eachother as many times as is stored in the config.selfTournamentShowDownSize variable, shows results and gives user option to save results
+	modelPath = loadModel()
+	
+	champArrayVal = sorted([f for f in os.listdir(modelPath) if os.path.isfile(os.path.join(modelPath, f)) and f[0:12] == "prevChampVal"], key=lambda x: int(x[12:]))
+	champArrayPol = sorted([f for f in os.listdir(modelPath) if os.path.isfile(os.path.join(modelPath, f)) and f[0:12] == "prevChampPol"], key=lambda x: int(x[12:]))
 
-def getIntResponse(question):
-	while True:
-		try:
-			i = int(input(question + "\n> "))
-			if i <= 0:
-				print("Value out of range")
-			else:
-				return i
-		except ValueError:
-			print("Please enter an integer.")
-			
-modelPath = loadOrCreateModel()
-
-while True:
-	createTrainingSet(modelPath)
-	createChallengerPair(modelPath)
-	modelShowdown(modelPath)
+	try:
+		if len(champArrayPol) != len(champArrayVal):
+			raise Exception("Unequal count of Value and Policy Neural Nets")
+		else:
+			for i in range(len(champArrayVal)):
+				if champArrayVal[i][12:] != champArrayPol[i][12:]:
+					raise Exception("Neural nets are missing from policy or value arrays")
+	except Exception as e:
+		print("Error: " + str(e))
+	
+	tournDict = {}
+	print("Beginning Tournament!")
+	
+	for i in range(len(champArrayVal)):
+		valNN1 = tf.keras.models.load_model(modelPath + "\\prevChampVal" + str(i + 1))
+		polNN1 = tf.keras.models.load_model(modelPath + "\\prevChampPol" + str(i + 1))
+		if i < len(champArrayVal):
+			for j in range(i + 1, len(champArrayVal)):
+				print(str(i + 1) + " vs " + str(j + 1))
+				valNN2 = tf.keras.models.load_model(modelPath + "\\prevChampVal" + str(j + 1))
+				polNN2 = tf.keras.models.load_model(modelPath + "\\prevChampPol" + str(j + 1))
+				
+				nn1Wins, nn2Wins, drawCount = head2Head("Gen " + str(i + 1), "Gen " + str(j + 1), valNN1, polNN1, valNN2, polNN2, config.selfTournamentShowDownSize, config.trainingRecursionCount)
+				
+				tournDict[str(i + 1) + "vs" + str(j + 1)] = {"nn1Wins": nn1Wins, "nn2Wins": nn2Wins, "Draws": drawCount}
+		
+		print(str(i + 1) + " vs champ") 
+		valNN2 = tf.keras.models.load_model(modelPath + "\\the_value_champ")
+		polNN2 = tf.keras.models.load_model(modelPath + "\\the_policy_champ")
+		
+		nn1Wins, nn2Wins, drawCount = head2Head("Gen " + str(i + 1), "Champ", valNN1, polNN1, valNN2, polNN2, config.selfTournamentShowDownSize, config.trainingRecursionCount)
+		tournDict[str(i) + "vsChamp"] = {"nn1Wins": nn1Wins, "nn2Wins": nn2Wins, "Draws": drawCount}
+	
+	print("Completed Tournament! Final Results: ")
+	for key, val in tournDict.items():
+		print(key + ": " + str(val))
+		
+	if config.getResponseFromList("Do you wish to save this result?", ('y','n')) == 'y':
+		if not os.path.exists(modelPath + "\\selfTournamentResults\\"):
+			os.makedirs(modelPath + "\\selfTournamentResults\\")
+		_pickle.dump(tournDict, open(modelPath + "\\selfTournamentResults\\bo" + str(config.selfTournamentShowDownSize) + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"), "wb"))
+		
+def loadTournamentResults(): # User can select any existing selfplay tournament results
+	resultsPath = loadModel() + "\\selfTournamentResults\\"
+	if not os.path.exists(resultsPath):
+		print("No tournament results exist")
+		return
+	else:
+		resultList = os.listdir(resultsPath)
+		for i, fileName in enumerate(resultList):
+			print(str(i + 1) + ". " + fileName)
+		
+		while True:
+			try:
+				modelInd = int(input(("Which result do you want to load?\n> ")))
+				if modelInd > len(resultList) or modelInd <= 0:
+					print("Value out of range.")
+				else:
+					break
+			except ValueError:
+				print("Try typing a number.")
+		
+		for key, val in _pickle.load(open(resultsPath + resultList[modelInd - 1], "rb")).items():
+			print(key + ": " + str(val))

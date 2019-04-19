@@ -3,14 +3,15 @@ import pdb, random, math, config, NNfunctions, numpy, tensorflow as tf
 from tqdm import tqdm
 
 class monteTree(): #monte tree class, can function with and without neural nets
+
 	def __init__(self, board, isRedTurn, polModel = None, valModel = None, randomExpand = False):
 		self.root = monteNode(board, isRedTurn)
 		self.polModel = polModel
 		self.valModel = valModel
-		if self.valModel:
+		if self.valModel and self.polModel:# using neural nets
 			self.root.nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(self.root.board.board, self.root.isRedTurn)]))).tolist()[0][1]
 			self.nnExpand(self.root)
-		else:
+		else: # using monte carlo random move method
 			self.expand(self.root, randomExpand)
 	
 	def __repr__(self):
@@ -25,9 +26,9 @@ class monteTree(): #monte tree class, can function with and without neural nets
 			return node
 		elif node.expanded and node.children:
 			valList = []
-			for child in node.children:
+			for child in node.children: # for each child, generate value according to assigned values, and traversal count
 				valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
-			return self.nnSelectRec(node.children[random.choice(config.maxelements(valList))])#call fn recursively on node with largest value
+			return self.nnSelectRec(node.children[random.choice(config.maxelements(valList))]) # call fn recursively on node with largest value
 		else:
 			self.nnExpand(node)
 			return node
@@ -49,14 +50,14 @@ class monteTree(): #monte tree class, can function with and without neural nets
 			else:
 				nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][1]#use value NN to get board value
 			parentNode.children.append(childNode)
-			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal)#backprop for each new child
+			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal) # backprop for each new child
 		parentNode.expanded = True
 		
 	def nnBackProp(currNode, isRedTurn, nnVal):
-		if currNode.isRedTurn == isRedTurn:# adjust value of boards with same player turn
+		if currNode.isRedTurn == isRedTurn: # adjust value of boards with same player turn
 			currNode.nnVal += nnVal
 		currNode.den += 1
-		if currNode.parent:#call recursively until root is reached
+		if currNode.parent: # call recursively until root is reached
 			monteTree.nnBackProp(currNode.parent, isRedTurn, nnVal)
 	
 	def expand(self, parentNode, randomExpand):
@@ -114,7 +115,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 class monteNode(config.node):
 	def __init__(self, board, isRedTurn, parent = None, nnProb = 0, rowNum = 0, colNum = 0):
 		config.node.__init__(self, board, isRedTurn, parent, rowNum, colNum)
-		self.num = 0
+		self.num = 0 # not used in neural net fns, replaced by nnVal
 		self.den = 0
 		self.nnProb = nnProb
 		self.nnVal = 0

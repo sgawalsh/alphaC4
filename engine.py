@@ -155,7 +155,7 @@ def runGame(): #mini test fn to run game between two players in console
 	isRedTurn = True
 
 	while (not gameOver):
-		colNum = int(input("Which column will you play? "))
+		colNum = int(input("Which column will you play?\n> "))
 		rowNum = myBoard.dropPiece(colNum, isRedTurn)
 		myBoard.printBoard()
 		if myBoard.checkWin(rowNum, colNum, isRedTurn):

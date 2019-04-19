@@ -82,7 +82,7 @@ class miniNode(config.node):#contains heuristic fn
 				score += self.iterLoop(rowNum, rowDir, colNum, colDir, addFour, self.isRedTurn)
 		return score
 		
-	def iterLoop(self, rowNum, rowDir, colNum, colDir, addFour, isRedTurn):
+	def iterLoop(self, rowNum, rowDir, colNum, colDir, addFour, isRedTurn):# for each four cells look at tile, if colour matches increase count, use count to return score for selected cell and direction
 		count = 0
 		iterScore = 0
 		for i in range(4):
@@ -122,7 +122,6 @@ def genBoardActionPairs(sampleSize, passFn):
 	
 	for _1 in tqdm(range(sampleSize)):
 		isRedTurn = random.choice([True, False])
-		#for _ in range(random.randint(0,15)):
 		for _2 in range(random.randint(0,42)):
 			simBoard, rowNum, colNum = simBoard.serveNextState(random.choice(simBoard.legalMoves), isRedTurn)
 			if simBoard.checkWin(rowNum, colNum, isRedTurn) or simBoard.checkDraw():

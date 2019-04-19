@@ -82,7 +82,7 @@ def boardToInputs(board, isRedTurn):
 					rowArr.append([0, 1, 0])
 				else:
 					rowArr.append([0, 0, 1])
-			else:
+			else:# not filled
 				rowArr.append([1, 0, 0])
 		boardArr.append(rowArr)
 	return boardArr
