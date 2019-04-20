@@ -63,14 +63,14 @@ def createChallengerPair(modelName): # use sample board positions from library, 
 		boardList.append([board[0].board, board[1]]) # board state and player move
 		boardMoves.append(board[2]) # board move
 		if set.hasWinner: # game result, 1 for win for current player, 0 for loss
-			boardResults.append(1 if set.redWins == board[1] else 0)
+			boardResults.append(2 if set.redWins == board[1] else 0)
 		else:#draw
-			boardResults.append(.5)
+			boardResults.append(1)
 	
 	boardList = numpy.array(NNfunctions.boardArrayListToInputs(boardList))
 	trainVal = tf.keras.models.load_model(modelName + "/the_value_champ")
 	trainPol = tf.keras.models.load_model(modelName + "/the_policy_champ")
-
+	
 	trainPol.fit(boardList, np_utils.to_categorical(boardMoves, 7), epochs = 3, batch_size = 500) # train policy on board-move pairs
 	trainVal.fit(boardList, np_utils.to_categorical(boardResults, 3), epochs = 3, batch_size = 500) # train value on game results
 	
@@ -192,7 +192,7 @@ def createModel(modelName): # User names new model and specifies shape
 	model.save("models//" + modelName + "//the_policy_champ")
 	
 	os.mkdir("models//" + modelName + "//trainingData")
-	#createTrainingSet(os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + modelName, True)
+	# createTrainingSet(os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + modelName, True)
 	
 def loadModel(): # User selects model, selected model path is returned
 	folderList = os.listdir(os.path.dirname(os.path.realpath(__file__)) + "\\models")

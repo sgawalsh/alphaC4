@@ -1,7 +1,7 @@
 import mc, engine, config
 from tqdm import tqdm
 
-def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, challPol, showDownSize, trainingRecursionCount1, trainingRecursionCount2 = None):# play selected amount of games between two models, return win counts
+def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, challPol, showDownSize, trainingRecursionCount1, trainingRecursionCount2 = None): # play selected amount of games between two models, return win counts
 	if trainingRecursionCount2 == None:
 		trainingRecursionCount2 = trainingRecursionCount1
 	challWins = 0
@@ -11,7 +11,7 @@ def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, ch
 	
 	print("Showdown!!!")
 	for _ in tqdm(range(showDownSize)):
-		champFirst = not champFirst# toggle first move
+		champFirst = not champFirst # toggle first move
 		isRedTurn = champFirst
 		currBoardState = engine.board()
 		while True:

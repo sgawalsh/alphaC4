@@ -9,7 +9,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 		self.polModel = polModel
 		self.valModel = valModel
 		if self.valModel and self.polModel:# using neural nets
-			self.root.nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(self.root.board.board, self.root.isRedTurn)]))).tolist()[0][1]
+			self.root.nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(self.root.board.board, self.root.isRedTurn)]))).tolist()[0][2]
 			self.nnExpand(self.root)
 		else: # using monte carlo random move method
 			self.expand(self.root, randomExpand)
@@ -48,7 +48,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 				nnVal = 0.5
 				childNode.boardCompleted = True
 			else:
-				nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][1]#use value NN to get board value
+				nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][2] # use value NN to get board value
 			parentNode.children.append(childNode)
 			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal) # backprop for each new child
 		parentNode.expanded = True
@@ -124,7 +124,7 @@ class monteNode(config.node):
 		self.isWin = False
 	
 	def __str__(self, colNum, maxLevel = 100, level=0):
-		ret = "\t"*level + "(" + str(colNum) + ") " + str(self.nnVal)[:4] + " / " + str(self.den) +"\n"
+		ret = "\t" * level + "(" + str(colNum) + ") " + str(self.nnVal)[:4] + " / " + str(self.den) +"\n"
 		if level < maxLevel:
 			for childCol in range(len(self.children)):
 				ret += self.children[childCol].__str__(childCol, maxLevel, level+1)

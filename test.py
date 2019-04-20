@@ -1,0 +1,3 @@
+import selfPlay
+
+selfPlay.autoSelfplay()

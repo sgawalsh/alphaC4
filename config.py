@@ -6,14 +6,14 @@ from math import sqrt
 MCTSexploration = .5 #that's better
 maxBoardVal = 100
 miniMaxDefaultDepth = 4
-trainingRecursionCount = 50 #how many selection cycles used in MCTS
-trainingSetSize = 50 #how many games are added to training set by champion each iteration
+trainingRecursionCount = 50 # how many selection cycles used in MCTS
+trainingSetSize = 50 # how many games are added to training set by champion each iteration
 fullTrainingSetSize = 1000 # maximum games in training set
-challengerSamples = 1000 #how many boards new challenger is trained on
-showDownSize = 50 #how many games played between challenger and champion
-selfTournamentShowDownSize = 5 #games played between each generation in selfplay tournament
-winRatio = 55 / 45 #ratio of wins to losses to become new champion
-champArrayLength = 30 #number of former champions recorded
+challengerSamples = 2000 # how many boards new challenger is trained on
+showDownSize = 50 # how many games played between challenger and champion
+selfTournamentShowDownSize = 5 # games played between each generation in selfplay tournament
+winRatio = 55 / 45 # ratio of wins to losses to become new champion
+champArrayLength = 30 # number of former champions recorded
 
 class node():
 	def __init__(self, board, isRedTurn, parent, rowNum, colNum):
