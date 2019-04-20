@@ -8,7 +8,7 @@ class miniTree():# minimax tree class, contains minimax algorithm
 		miniTree.genTreeMM(self.root, -config.maxBoardVal, config.maxBoardVal, 0, maxLevel)
 	
 	def __str__(self, maxLevel = 100):
-		return self.root.__str__(maxLevel, 0)				
+		return self.root.__str__(maxLevel, 0)
 				
 	def genTreeMM(currNode, alpha, beta, currDepth, maxDepth):
 		if currNode.rowNum and currNode.board.checkWin(currNode.rowNum, currNode.colNum, not currNode.isRedTurn):

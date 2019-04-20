@@ -22,10 +22,9 @@ def modelFaceoff():
 			
 			if modelInd:
 				modelName = os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + folderList[modelInd - 1]
-				modelArray.append([tf.keras.models.load_model(modelName + "\\the_value_champ"), tf.keras.models.load_model(modelName + "\\the_policy_champ"), config.getIntResponse("What should the recursion count be?")])
+				modelArray.append([tf.keras.models.load_model(modelName + "\\the_value_champ"), tf.keras.models.load_model(modelName + "\\the_policy_champ"), config.getIntResponse("What should the recursion count be?")], folderList[modelInd - 1])
 				_ += 1
-		pdb.set_trace()
-		head2Head.head2Head(modelArray[0][0], modelArray[0][1], modelArray[1][0], modelArray[1][1], config.getIntResponse("How many games should be played?"), modelArray[0][2], modelArray[1][2])
+		head2Head.head2Head(False, modelArray[0][3], modelArray[1][3], modelArray[0][0], modelArray[0][1], modelArray[1][0], modelArray[1][1], config.getIntResponse("How many games should be played?"), modelArray[0][2], modelArray[1][2])
 	else:
 		print("No models exist")
 				

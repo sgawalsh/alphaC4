@@ -41,4 +41,3 @@ model.save("oldModels/" + policyOrValue + "/" + simpleOrConvolutional + "/" + ti
 
 #predictions = new_model.predict([x_test])
 #print(predictions)
-				

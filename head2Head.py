@@ -1,7 +1,7 @@
-import mc, engine
+import mc, engine, config
 from tqdm import tqdm
 
-def head2Head(name1, name2, champVal, champPol, challVal, challPol, showDownSize, trainingRecursionCount1, trainingRecursionCount2 = None):# play selected amount of games between two models, return win counts
+def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, challPol, showDownSize, trainingRecursionCount1, trainingRecursionCount2 = None):# play selected amount of games between two models, return win counts
 	if trainingRecursionCount2 == None:
 		trainingRecursionCount2 = trainingRecursionCount1
 	challWins = 0
@@ -20,12 +20,12 @@ def head2Head(name1, name2, champVal, champPol, challVal, challPol, showDownSize
 				currPlayer.nnSelectRec(currPlayer.root)
 			currBoardState, rowNum, colNum = currPlayer.makeMove()
 			if currBoardState.checkWin(rowNum, colNum, isRedTurn):
-				if not isRedTurn:
+				if isRedTurn:
 					print("\n" + name1 + " wins!")
-					challWins += 1
+					champWins += 1
 				else:
 					print("\n" + name2 + " wins!")
-					champWins += 1
+					challWins += 1
 				break
 			elif currBoardState.checkDraw():
 				print("\nDraw!")
@@ -37,10 +37,13 @@ def head2Head(name1, name2, champVal, champPol, challVal, challPol, showDownSize
 		{} Wins: {}
 		{} Wins: {}
 		Draws: {}'''.format(name1, champWins, name2, challWins, drawCount))
+		if isSelfPlayShowDown and ((champWins + drawCount) * config.winRatio) > (showDownSize - champWins - drawCount):
+			print("Challenger victory no longer possible. Ending showdown.")
+			break
 	print('''	End Stats:
 		Games Played: {}
 		{} Wins: {}
 		{} Wins: {}
-		Draws: {}'''.format(showDownSize, name1, champWins, name2, challWins, drawCount))
+		Draws: {}'''.format(champWins + challWins + drawCount, name1, champWins, name2, challWins, drawCount))
 		
 	return champWins, challWins, drawCount
