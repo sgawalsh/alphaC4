@@ -5,9 +5,9 @@ def modelFaceoff():
 	if folderList:
 		print("Models:")
 		
-		_ = 1
+		_ = 0
 		modelArray = []
-		while _ < 3:# load 2 models
+		while _ < 2:# load 2 models
 			while True:
 				for i, folder in enumerate(folderList):
 					print(str(i + 1) + ". " + folder)

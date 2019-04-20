@@ -4,13 +4,12 @@ class board:# board class, contains game state and handles changing board state,
 
 	def __init__(self, prevBoard = None, legalMoves = None):
 		self.board = []
-		if prevBoard: #copy existing
+		if prevBoard: # copy existing
 			self.legalMoves = legalMoves.copy()
 			for row in range(6):
 				newRow = []
 				for col in range(7):
-					newCell = cell(prevBoard[row][col].isFilled, prevBoard[row][col].isRed)
-					newRow.append(newCell)
+					newRow.append(cell(prevBoard[row][col].isFilled, prevBoard[row][col].isRed))
 				self.board.append(newRow)
 		else: #initial board
 			self.legalMoves = [0,1,2,3,4,5,6]

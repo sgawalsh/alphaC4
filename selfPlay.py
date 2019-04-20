@@ -18,6 +18,8 @@ def createTrainingSet(modelName, firstRun = False): # create config.trainingSetS
 	except FileNotFoundError:
 		gameID = 0
 		trainingSet = []
+		if not os.path.exists(modelName + "\\trainingData"):
+			os.makedirs(modelName + "\\trainingData")
 	
 	currSet = gameSet(gameID + 1)
 	champVal = tf.keras.models.load_model(modelName + "\\the_value_champ")
@@ -26,15 +28,16 @@ def createTrainingSet(modelName, firstRun = False): # create config.trainingSetS
 	print("Creating new training samples...")
 	
 	for _ in tqdm(range((int(config.challengerSamples / 5)) if firstRun else config.trainingSetSize)):
-		myTree = mc.monteTree(engine.board(), random.choice([True, False]), champPol, champVal)
+		myTree = mc.monteTree(engine.board(), (_ % 2) == 0, champPol, champVal)
 		while True:
 			boardMovePair = [myTree.root.board, myTree.root.isRedTurn]
-			for _2 in range(config.trainingRecursionCount):#build tree
+			for _2 in range(config.trainingRecursionCount): # build tree
 				myTree.nnSelectRec(myTree.root)
-			myTree.makeMove(True)# set root to next move
-			boardMovePair.append(myTree.root.colNum)
+			myTree.makeMove(True) # set root to next move
+			boardMovePair.append(myTree.root.colNum) # associate move with prev board and player turn
 			currSet.gameBoards.append(boardMovePair)
-			if myTree.root.board.checkWin(myTree.root.rowNum, myTree.root.colNum, not myTree.root.isRedTurn):#check winner, assign appropriate values to gameset
+			if myTree.root.board.checkWin(myTree.root.rowNum, myTree.root.colNum, not myTree.root.isRedTurn): # check winner, assign appropriate values to gameset
+				#myTree.root.board.printBoard()
 				currSet.hasWinner = True
 				currSet.redWins = not myTree.root.isRedTurn
 				trainingSet.append(currSet)
@@ -44,8 +47,8 @@ def createTrainingSet(modelName, firstRun = False): # create config.trainingSetS
 				trainingSet.append(currSet)
 				currSet = gameSet(currSet.gameID + 1)
 				break
-	#slice oldest games, pickle training set
-	_pickle.dump(trainingSet[-config.fullTrainingSetSize:], open(modelName + "\\trainingData\\trainingSet", "wb"))
+	# slice oldest games, pickle training set
+	_pickle.dump(trainingSet[-config.fullTrainingSetSize:], open(modelName + "\\trainingData\\trainingSet", "w+b"))
 	
 	print("Training samples updated.")
 
@@ -60,19 +63,19 @@ def createChallengerPair(modelName): # use sample board positions from library, 
 	for _ in tqdm(range(config.challengerSamples)):# get random game and board from training set, for each, append board state, player turn, associated move, and game result
 		set = random.choice(trainingSet)
 		board = random.choice(set.gameBoards)
-		boardList.append([board[0].board, board[1]]) # board state and player move
+		boardList.append([board[0].board, board[1]]) # board state and player turn
 		boardMoves.append(board[2]) # board move
-		if set.hasWinner: # game result, 1 for win for current player, 0 for loss
+		if set.hasWinner: # game result, 2 for win for current player, 0 for loss
 			boardResults.append(2 if set.redWins == board[1] else 0)
-		else:#draw
+		else: # draw
 			boardResults.append(1)
 	
 	boardList = numpy.array(NNfunctions.boardArrayListToInputs(boardList))
 	trainVal = tf.keras.models.load_model(modelName + "/the_value_champ")
 	trainPol = tf.keras.models.load_model(modelName + "/the_policy_champ")
 	
-	trainPol.fit(boardList, np_utils.to_categorical(boardMoves, 7), epochs = 3, batch_size = 500) # train policy on board-move pairs
-	trainVal.fit(boardList, np_utils.to_categorical(boardResults, 3), epochs = 3, batch_size = 500) # train value on game results
+	trainPol.fit(boardList, np_utils.to_categorical(boardMoves, 7), epochs = config.challengerEpochs, batch_size = 500) # train policy on board-move pairs
+	trainVal.fit(boardList, np_utils.to_categorical(boardResults, 3), epochs = config.challengerEpochs, batch_size = 500) # train value on game results
 	
 	trainVal.save(modelName + "//the_value_challenger")
 	trainPol.save(modelName + "//the_policy_challenger")

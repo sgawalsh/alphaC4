@@ -34,9 +34,8 @@ class monteTree(): #monte tree class, can function with and without neural nets
 			return node
 	
 	def nnExpand(self, parentNode): # create child node for each legal move, get value if board is an end state, or use NN to generate a value, backprop for each new child
-		boardInputs = NNfunctions.boardToInputs(parentNode.board.board, parentNode.isRedTurn)
-		moveProbs = (self.polModel.predict(numpy.array([boardInputs]))).tolist()[0]#use policy NN to get initial move probabilities
-		for colNum in parentNode.board.legalMoves:#create child node for each legal move
+		moveProbs = (self.polModel.predict(numpy.array([NNfunctions.boardToInputs(parentNode.board.board, parentNode.isRedTurn)]))).tolist()[0] # use policy NN to get initial move probabilities
+		for colNum in parentNode.board.legalMoves: # create child node for each legal move
 			newBoard, childRow, childCol = parentNode.board.serveNextState(colNum, parentNode.isRedTurn)
 			childNode = monteNode(newBoard, not parentNode.isRedTurn, parentNode, moveProbs[colNum], childRow, childCol)
 			nnVal = 0

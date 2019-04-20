@@ -1,4 +1,4 @@
-import mc, engine, config
+import mc, engine, config, pdb
 from tqdm import tqdm
 
 def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, challPol, showDownSize, trainingRecursionCount1, trainingRecursionCount2 = None): # play selected amount of games between two models, return win counts
@@ -18,7 +18,9 @@ def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, ch
 			currPlayer = mc.monteTree(currBoardState, True, champPol, champVal) if isRedTurn else mc.monteTree(currBoardState, False, challPol, challVal)
 			for _2 in range(trainingRecursionCount1 if isRedTurn else trainingRecursionCount2):
 				currPlayer.nnSelectRec(currPlayer.root)
+			#print(currPlayer)
 			currBoardState, rowNum, colNum = currPlayer.makeMove()
+			currBoardState.printBoard()
 			if currBoardState.checkWin(rowNum, colNum, isRedTurn):
 				if isRedTurn:
 					print("\n" + name1 + " wins!")
