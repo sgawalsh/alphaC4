@@ -6,7 +6,7 @@ from math import sqrt
 MCTSexploration = .5 #that's better
 maxBoardVal = 100
 miniMaxDefaultDepth = 4
-trainingRecursionCount = 50 # how many selection cycles used in MCTS
+trainingRecursionCount = 100 # how many selection cycles used in MCTS
 trainingSetSize = 50 # how many games are added to training set by champion each iteration
 fullTrainingSetSize = 1000 # maximum games in training set
 challengerSamples = 2000 # how many boards new challenger is trained on

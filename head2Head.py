@@ -37,7 +37,7 @@ def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, ch
 		{} Wins: {}
 		{} Wins: {}
 		Draws: {}'''.format(name1, champWins, name2, challWins, drawCount))
-		if isSelfPlayShowDown and ((champWins + drawCount) * config.winRatio) > (showDownSize - champWins - drawCount):
+		if isSelfPlayShowDown and ((champWins) * config.winRatio) > (showDownSize - champWins - drawCount):
 			print("Challenger victory no longer possible. Ending showdown.")
 			break
 	print('''	End Stats:

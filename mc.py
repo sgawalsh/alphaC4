@@ -9,7 +9,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 		self.polModel = polModel
 		self.valModel = valModel
 		if self.valModel and self.polModel:# using neural nets
-			self.root.nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(self.root.board.board, self.root.isRedTurn)]))).tolist()[0][2]
+			self.root.nnVal = genNNVal((self.valModel.predict(numpy.array([NNfunctions.boardToInputs(self.root.board.board, self.root.isRedTurn)]))).tolist()[0])
 			self.nnExpand(self.root)
 		else: # using monte carlo random move method
 			self.expand(self.root, randomExpand)
@@ -20,7 +20,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 	def __str__(self, maxLevel = 100):
 		return self.root.__str__(0, maxLevel, 0)
 	
-	def nnSelectRec(self, node):# drill through tree until unexpanded node is reached, expand and backpropagate values through tree
+	def nnSelectRec(self, node): # drill through tree until unexpanded node is reached, expand and backpropagate values through tree
 		if node.boardCompleted:
 			monteTree.nnBackProp(node, node.isRedTurn, 1 if node.isWin else .5)
 			return node
@@ -33,7 +33,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 			self.nnExpand(node)
 			return node
 	
-	def nnExpand(self, parentNode):#create child node for each legal move, get value if board is an end state, or use NN to generate a value, backprop for each new child
+	def nnExpand(self, parentNode): # create child node for each legal move, get value if board is an end state, or use NN to generate a value, backprop for each new child
 		boardInputs = NNfunctions.boardToInputs(parentNode.board.board, parentNode.isRedTurn)
 		moveProbs = (self.polModel.predict(numpy.array([boardInputs]))).tolist()[0]#use policy NN to get initial move probabilities
 		for colNum in parentNode.board.legalMoves:#create child node for each legal move
@@ -48,7 +48,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 				nnVal = 0.5
 				childNode.boardCompleted = True
 			else:
-				nnVal = (self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0][2] # use value NN to get board value
+				nnVal = genNNVal((self.valModel.predict(numpy.array([NNfunctions.boardToInputs(newBoard.board, childNode.isRedTurn)]))).tolist()[0]) # use value NN to get board value
 			parentNode.children.append(childNode)
 			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal) # backprop for each new child
 		parentNode.expanded = True
@@ -129,3 +129,6 @@ class monteNode(config.node):
 			for childCol in range(len(self.children)):
 				ret += self.children[childCol].__str__(childCol, maxLevel, level+1)
 		return ret
+		
+def genNNVal(inList): # return draw probability * .5 + win probability
+	return 0.5 * inList[1] + inList[2]
