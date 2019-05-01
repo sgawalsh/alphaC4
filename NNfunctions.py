@@ -78,9 +78,9 @@ def boardToInputs(board, isRedTurn):
 		for cell in rowNum:
 			#rowArr.append([cell.isFilled * (1 if cell.isRed == board[1] else -1)])# O = -1, _ = 0, X = 1
 			if cell.isFilled:
-				if cell.isRed == isRedTurn:
+				if cell.isRed == isRedTurn: # friendly cell
 					rowArr.append([0, 1, 0])
-				else:
+				else: # enemy cell
 					rowArr.append([0, 0, 1])
 			else:# not filled
 				rowArr.append([1, 0, 0])

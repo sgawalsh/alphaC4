@@ -24,26 +24,28 @@ class monteTree(): #monte tree class, can function with and without neural nets
 		if node.boardCompleted:
 			monteTree.nnBackProp(node, node.isRedTurn, 1 if node.isWin else .5)
 			return node
-		elif node.expanded and node.children:
+		elif node.expanded:
 			valList = []
 			for child in node.children: # for each child, generate value according to assigned values, and traversal count
-				valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
-			return self.nnSelectRec(node.children[random.choice(config.maxelements(valList))]) # call fn recursively on node with largest value
+				if config.origFormula:
+					valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
+				else:
+					# valList.append((child.nnVal / child.den) + config.MCTSexploration * child.nnProb * math.sqrt(math.log(self.root.den) / 1 + child.den))
+					valList.append((child.nnVal / child.den) + config.MCTSexploration * child.nnProb * math.sqrt(self.root.den) / (1 + child.den))
+			self.nnSelectRec(node.children[random.choice(config.maxelements(valList))]) # call fn recursively on node with largest value
 		else:
 			self.nnExpand(node)
-			return node
-	
+
 	def nnExpand(self, parentNode): # create child node for each legal move, get value if board is an end state, or use NN to generate a value, backprop for each new child
 		moveProbs = (self.polModel.predict(numpy.array([NNfunctions.boardToInputs(parentNode.board.board, parentNode.isRedTurn)]))).tolist()[0] # use policy NN to get initial move probabilities
 		for colNum in parentNode.board.legalMoves: # create child node for each legal move
 			newBoard, childRow, childCol = parentNode.board.serveNextState(colNum, parentNode.isRedTurn)
 			childNode = monteNode(newBoard, not parentNode.isRedTurn, parentNode, moveProbs[colNum], childRow, childCol)
-			nnVal = 0
 			if childNode.board.checkWin(childNode.rowNum, childNode.colNum, not childNode.isRedTurn):
 				nnVal = 1
 				childNode.boardCompleted = True
 				childNode.isWin = True
-			elif parentNode.board.checkDraw():
+			elif childNode.board.checkDraw():
 				nnVal = 0.5
 				childNode.boardCompleted = True
 			else:
@@ -52,7 +54,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 			monteTree.nnBackProp(childNode, childNode.isRedTurn, nnVal) # backprop for each new child
 		parentNode.expanded = True
 		
-	def nnBackProp(currNode, isRedTurn, nnVal):
+	def nnBackProp(currNode, isRedTurn, nnVal): # backpropagate  values back through tree
 		if currNode.isRedTurn == isRedTurn: # adjust value of boards with same player turn
 			currNode.nnVal += nnVal
 		currNode.den += 1
@@ -111,6 +113,38 @@ class monteTree(): #monte tree class, can function with and without neural nets
 		else:
 			raise Exception('The node has no children.')
 	
+	def getMoveProbs(self):
+		moveProbs = []
+		childCount = 0
+		for i in range(7):
+			if i in self.root.board.legalMoves:
+				moveProbs.append(self.root.children[childCount].den)
+				childCount += 1
+			else:
+				moveProbs.append(0)
+		moveProbs = numpy.array(moveProbs)
+		return moveProbs / moveProbs.sum()
+		
+	def exploratoryMove(self, temp):
+		if self.root.children:
+			valList = []
+			for child in self.root.children:
+				valList.append(child.den ** (1 / (1 - temp)))
+			#pdb.set_trace()
+			valList = numpy.array(valList)
+			moveChoice = numpy.random.choice(self.root.children, p = valList / valList.sum())
+			return moveChoice.board, moveChoice.rowNum, moveChoice.colNum
+		else:
+			raise Exception('The node has no children.')
+	
+	def turnCountToTemp(turnCount):
+		turnCount -= config.tempTurns
+		if turnCount <= 0:
+			return 0
+		else:
+			turnCount *= config.tempRate
+			return turnCount
+	
 class monteNode(config.node):
 	def __init__(self, board, isRedTurn, parent = None, nnProb = 0, rowNum = 0, colNum = 0):
 		config.node.__init__(self, board, isRedTurn, parent, rowNum, colNum)
@@ -123,7 +157,7 @@ class monteNode(config.node):
 		self.isWin = False
 	
 	def __str__(self, colNum, maxLevel = 100, level=0):
-		ret = "\t" * level + "(" + str(colNum) + ") " + str(self.nnVal)[:4] + " / " + str(self.den) +"\n"
+		ret = "\t" * level + "(" + str(colNum) + ") P:" + str(self.nnProb)[:4] + " V:" + str(self.nnVal)[:4] + " / " + str(self.den) +"\n"
 		if level < maxLevel:
 			for childCol in range(len(self.children)):
 				ret += self.children[childCol].__str__(childCol, maxLevel, level+1)

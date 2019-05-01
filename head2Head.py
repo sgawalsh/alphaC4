@@ -7,20 +7,29 @@ def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, ch
 	challWins = 0
 	drawCount = 0
 	champWins = 0
-	champFirst = False
+	# showTree = False
+	# showBoard = True
+	# treeDepth = 2
 	
 	print("Showdown!!!")
 	for _ in tqdm(range(showDownSize)):
-		champFirst = not champFirst # toggle first move
-		isRedTurn = champFirst
+		isRedTurn = _ % 2 == 0 # toggle first move
 		currBoardState = engine.board()
+		turnCount = 0
 		while True:
 			currPlayer = mc.monteTree(currBoardState, True, champPol, champVal) if isRedTurn else mc.monteTree(currBoardState, False, challPol, challVal)
 			for _2 in range(trainingRecursionCount1 if isRedTurn else trainingRecursionCount2):
 				currPlayer.nnSelectRec(currPlayer.root)
-			#print(currPlayer)
-			currBoardState, rowNum, colNum = currPlayer.makeMove()
-			currBoardState.printBoard()
+			# if showTree:
+				# print(currPlayer.__str__(treeDepth))
+			temp = mc.monteTree.turnCountToTemp(turnCount)
+			if temp < 1:
+				currBoardState, rowNum, colNum = currPlayer.exploratoryMove(temp)
+			else:
+				currBoardState, rowNum, colNum = currPlayer.makeMove()
+			# if showBoard:
+				# currBoardState.printBoard()
+			# pdb.set_trace()
 			if currBoardState.checkWin(rowNum, colNum, isRedTurn):
 				if isRedTurn:
 					print("\n" + name1 + " wins!")
@@ -35,13 +44,18 @@ def head2Head(isSelfPlayShowDown, name1, name2, champVal, champPol, challVal, ch
 				break
 			else:
 				isRedTurn = not isRedTurn
+				turnCount += 1
 		print('''	Current Stats:
 		{} Wins: {}
 		{} Wins: {}
 		Draws: {}'''.format(name1, champWins, name2, challWins, drawCount))
-		if isSelfPlayShowDown and ((champWins) * config.winRatio) > (showDownSize - champWins - drawCount):
-			print("Challenger victory no longer possible. Ending showdown.")
-			break
+		if isSelfPlayShowDown:
+			if ((champWins) * config.winRatio) > (showDownSize - champWins - drawCount):
+				print("Challenger victory no longer possible. Ending showdown.")
+				break
+			elif ((challWins) / config.winRatio) > (showDownSize - challWins - drawCount):
+				print("Challenger wins! Ending showdown.")
+				break
 	print('''	End Stats:
 		Games Played: {}
 		{} Wins: {}
