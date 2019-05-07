@@ -6,7 +6,7 @@ MCTSexploration = sqrt(2) # standard value which determines how likely a node is
 # MCTSexploration = .5 # that's better
 maxBoardVal = 100 # maximum value assigned by minimax heuristic
 miniMaxDefaultDepth = 4 # depth of minimax tree
-trainingRecursionCount = 50 # how many selection cycles used in MCTS
+trainingRecursionCount = 100 # how many selection cycles used in MCTS
 trainingSetSize = 100 # how many games are added to training set by champion each iteration
 fullTrainingSetSize = 1500 # maximum games in training set
 minTrainingSetSize = 200 # minimum games in training set
@@ -23,7 +23,7 @@ polLoss = 'poisson' # Loss function used for Policy NNs
 metrics = ['accuracy'] # Metrics displayed when fitting NNs
 origFormula = False
 tempRate = .1 # Determines how quickly the MCTS becomes less exploratory
-tempTurns = 5 # How many turns are executed before the MCTS becomes less exploratory
+tempTurns = 5 # How many turns are executed before the MCTS starts becoming less exploratory
 
 class node():
 	def __init__(self, board, isRedTurn, parent, rowNum, colNum):

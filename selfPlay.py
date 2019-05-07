@@ -9,8 +9,6 @@ class gameSet(): # class used to track training game results
 		self.hasWinner = False
 		self.redWins = False
 		
-
-	
 def createTrainingSet(modelName): # create config.trainingSetSize games by champion using MCTS against self, for each board store move probs, and eventual winner, append data to library, deleting old data
 	try:
 		trainingSet = pickle.load(open(modelName + "\\trainingSet", "rb"))
@@ -158,6 +156,7 @@ def loadOrCreateModel(specs): # User can select existing model, or create new on
 				print("Which model do you want to load? Select number or press '0' to create a new model. \n> ")
 		
 		if modelInd:
+			getSummary(os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + folderList[modelInd - 1])
 			if not os.path.exists(os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + folderList[modelInd - 1] + specs):
 				if config.getResponseFromList("This model has not been initialized for your current specs. Would you like to clone the existing model structure?", ['y','n']) == 'y':
 					cloneModel(os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + folderList[modelInd - 1], specs)
@@ -397,7 +396,7 @@ def loadTournamentResults(): # User can select any existing selfplay tournament 
 		for key, val in pickle.load(open(resultsPath + resultList[modelInd - 1], "rb")).items():
 			print(key + ": " + str(val))
 			
-def testCreateChallengerPair(modelName): # use sample board positions from library, use mcts to train current champion NN to create challenger NN and VNN
+def testCreateChallengerPair(modelName): # troubleshooter used for debugging
 	trainingSet = pickle.load(open(modelName + "\\trainingSet", "rb"))
 	
 	boardList, boardMoves, boardResults = loadData(trainingSet, config.challengerSamples)
@@ -451,39 +450,12 @@ def loadData(trainingSet, samples):
 			
 	return boardList, numpy.array(boardMoves), boardResults
 	
+def getSummary(folderName): # Gives structure summaries for selected model
+	folderName += "\\" + os.listdir(folderName)[0]
 	
-# def createTrainingSet(modelName): # create config.trainingSetSize games by champion using MCTS against self, for each board store move probs, and eventual winner, append data to library, deleting old data
-	# try:
-		# trainingSet = pickle.load(open(modelName + "\\trainingSet", "rb"))
-	# except FileNotFoundError:
-		# trainingSet = []
-	
-	# currSet = gameSet(gameID + 1)
-	# champVal = tf.keras.models.load_model(modelName + "\\the_value_champ")
-	# champPol = tf.keras.models.load_model(modelName + "\\the_policy_champ")
-	
-	# print("Creating new training samples...")
-	
-	# for _ in tqdm(range(config.minTrainingSetSize - len(trainingSet) if len(trainingSet) < config.minTrainingSetSize and (config.minTrainingSetSize - len(trainingSet)) > config.trainingSetSize else config.trainingSetSize)):
-		# myTree = mc.monteTree(engine.board(), (_ % 2) == 0, champPol, champVal)
-		# while True:
-			# boardMovePair = [myTree.root.board, myTree.root.isRedTurn]
-			# for _2 in range(config.trainingRecursionCount): # build tree
-				# myTree.nnSelectRec(myTree.root)
-			# myTree.makeMove(True) # set root to next move
-			# #boardMovePair.append(myTree.root.colNum) # associate move with prev board and player turn
-			# boardMovePair.append(myTree.getMoveProbs())
-			# currSet.gameBoards.append(boardMovePair)
-			# if myTree.root.board.checkWin(myTree.root.rowNum, myTree.root.colNum, not myTree.root.isRedTurn): # check winner, assign appropriate values to gameset
-				# #myTree.root.board.printBoard()
-				# currSet.hasWinner = True
-				# currSet.redWins = not myTree.root.isRedTurn
-				# trainingSet.append(currSet)
-				# currSet = gameSet()
-				# break
-			# elif myTree.root.board.checkDraw():
-				# trainingSet.append(currSet)
-				# currSet = gameSet()
-				# break
-	# # slice oldest games, pickle training set
-	# pickle.dump(trainingSet[-config.fullTrainingSetSize:], open(modelName + "\\trainingSet", "w+b"))
+	model = tf.keras.models.load_model(folderName + "\\the_value_champ")
+	print("Here's the Value model structure: ")
+	model.summary()
+	model = tf.keras.models.load_model(folderName + "\\the_policy_champ")
+	print("Here's the Policy model structure: ")
+	model.summary()

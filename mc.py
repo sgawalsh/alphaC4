@@ -139,11 +139,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 	
 	def turnCountToTemp(turnCount):
 		turnCount -= config.tempTurns
-		if turnCount <= 0:
-			return 0
-		else:
-			turnCount *= config.tempRate
-			return turnCount
+		return (0 if turnCount <=0 else turnCount *= config.tempRate)
 	
 class monteNode(config.node):
 	def __init__(self, board, isRedTurn, parent = None, nnProb = 0, rowNum = 0, colNum = 0):
