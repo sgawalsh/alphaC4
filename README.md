@@ -5,3 +5,5 @@ This project began as an attempt to train neural nets on connect 4, and over tim
 By running the run.py file, a user can load an existing neural network, or can create their own via the terminal. The selfplay learning process is then started automatically until the terminal is closed. Any new champions created during this time will be saved under the folder name selected by the user.
 
 A user can check the results of the selfplay learning by running a tournament between the current and previous saved champions by running seflplay.generationTournament(). The results of the tournament can be saved and subsequently accessed by running selfplay.loadTournamentResults().
+
+The project also allows the user to compare the performance of different neural net structures by running a tournament between two existing neural net pairs using the head2Head.modelShowdown function.
