@@ -1,6 +1,6 @@
 # alphaC4
 
-This project began as an attempt to train neural nets on connect 4, and over time morphed into an attempt to recreate the process used on the alpha go project and apply it to the game of connect 4. The project incorporates the use of multiple neural networks simultaneously, a monte carlo tree search function, and a self play learning process by which the user can train a neural net indefinitely.
+This project began as an attempt to train neural nets on connect 4, and over time morphed into an attempt to recreate the techniques used on the AlphaGo projects and apply it to the game of connect 4. The project incorporates the use of multiple neural networks simultaneously, a monte carlo tree search function, and a self-play learning process by which the user can train a neural net structure indefinitely.
 
 By running the run.py file, a user can load an existing neural network, or can create their own via the terminal. The selfplay learning process is then started automatically until the terminal is closed. Any new champions created during this time will be saved under the folder name selected by the user.
 
