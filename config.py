@@ -13,15 +13,14 @@ minTrainingSetSize = 200 # minimum games in training set
 challengerSamples = 1000 # how many boards new challenger is trained on
 batchSizeRatio = 1 / 20 # size of batch relative to samples given
 challengerEpochs = 3 # how many epochs are used when generating challenger NNs
-showDownSize = 50 # how many games played between challenger and champion
-selfTournamentShowDownSize = 4 # games played between each generation in selfplay tournament
+showDownSize = 100 # how many games played between challenger and champion
+selfTournamentShowDownSize = 50 # games played between each generation in selfplay tournament
 winRatio = 55 / 45 # ratio of wins to losses to become new champion
 champArrayLength = 10 # number of former champions recorded
 optimizer = 'adam' # optimizer used for all NNs
 valLoss = 'sparse_categorical_crossentropy' # Loss function used for value NNs
 polLoss = 'poisson' # Loss function used for Policy NNs
 metrics = ['accuracy'] # Metrics displayed when fitting NNs
-origFormula = False
 tempRate = .1 # Determines how quickly the MCTS becomes less exploratory
 tempTurns = 5 # How many turns are executed before the MCTS starts becoming less exploratory
 

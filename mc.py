@@ -20,19 +20,15 @@ class monteTree(): #monte tree class, can function with and without neural nets
 	def __str__(self, maxLevel = 100):
 		return self.root.__str__(0, maxLevel, 0)
 	
-	def nnSelectRec(self, node): # drill through tree until unexpanded node is reached, expand and backpropagate values through tree
+	def nnSelectRec(self, node, custConstMC = None): # drill through tree until unexpanded node is reached, expand and backpropagate values through tree
 		if node.boardCompleted:
 			monteTree.nnBackProp(node, node.isRedTurn, 1 if node.isWin else .5)
 			return node
 		elif node.expanded:
 			valList = []
 			for child in node.children: # for each child, generate value according to assigned values, and traversal count
-				if config.origFormula:
-					valList.append((child.nnVal / child.den) + config.MCTSexploration * math.sqrt(math.log(child.nnProb + self.root.den) / child.den))
-				else:
-					# valList.append((child.nnVal / child.den) + config.MCTSexploration * child.nnProb * math.sqrt(math.log(self.root.den) / 1 + child.den))
-					valList.append((child.nnVal / child.den) + config.MCTSexploration * child.nnProb * math.sqrt(self.root.den) / (1 + child.den))
-			self.nnSelectRec(node.children[random.choice(config.maxelements(valList))]) # call fn recursively on node with largest value
+				valList.append((child.nnVal / child.den) + (custConstMC if custConstMC else config.MCTSexploration) * child.nnProb * math.sqrt(self.root.den) / (1 + child.den))
+			self.nnSelectRec(node.children[random.choice(config.maxelements(valList))], custConstMC = (custConstMC if custConstMC else config.MCTSexploration)) # call fn recursively on node with largest value
 		else:
 			self.nnExpand(node)
 
@@ -139,7 +135,7 @@ class monteTree(): #monte tree class, can function with and without neural nets
 	
 	def turnCountToTemp(turnCount):
 		turnCount -= config.tempTurns
-		return (0 if turnCount <=0 else turnCount *= config.tempRate)
+		return (0 if turnCount <= 0 else turnCount * config.tempRate)
 	
 class monteNode(config.node):
 	def __init__(self, board, isRedTurn, parent = None, nnProb = 0, rowNum = 0, colNum = 0):

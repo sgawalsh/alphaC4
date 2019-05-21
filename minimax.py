@@ -1,5 +1,5 @@
 from engine import board, cell
-import config, pdb, random, numpy, time
+import config, pdb, random, numpy
 from tqdm import tqdm
 
 class miniTree():# minimax tree class, contains minimax algorithm

@@ -45,7 +45,7 @@ def createTrainingSet(modelName): # create config.trainingSetSize games by champ
 	# slice oldest games, pickle training set
 	pickle.dump(trainingSet[-config.fullTrainingSetSize:], open(modelName + "\\trainingSet", "w+b"))
 	
-def createTrainingSetExploration(modelName):
+def createTrainingSetExploration(modelName): # create config.trainingSetSize games by champion using MCTS against self, uses temperature variable to manage exploratory play, for each board store move probs, and eventual winner, append data to library, deleting old data
 	try:
 		trainingSet = pickle.load(open(modelName + "\\trainingSet", "rb"))
 	except FileNotFoundError:
@@ -134,8 +134,6 @@ def modelShowdown(modelName): # play config.showDownSize games using mcts, if ch
 		
 		challVal.save(modelName + "//the_value_champ")
 		challPol.save(modelName + "//the_policy_champ")
-		if int(champNum) > 4:
-			sys.exit()
 		
 def loadOrCreateModel(specs): # User can select existing model, or create new one
 	folderList = os.listdir(os.path.dirname(os.path.realpath(__file__)) + "\\models")
@@ -282,7 +280,7 @@ def loadModel(): # User selects model, specs, selected model path is returned
 						break
 				except ValueError:
 					print("Which model specs do you want to load?\n> ")
-			return os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + folderList[modelInd - 1] + specList[specInd - 1], int(specArray[1]), const
+			return os.path.dirname(os.path.realpath(__file__)) + "\\models\\" + folderList[modelInd - 1] + "\\" + specList[specInd - 1], int(specArray[1]), const
 	
 def addLayer(model, shape, hasSimpleAsLast): # Adds layer to model currently being created by the user
 	userChoice = config.getResponseFromList("Would you like to make a convolutional, or simple layer?", ('c', 's'))
@@ -314,7 +312,7 @@ def addLayer(model, shape, hasSimpleAsLast): # Adds layer to model currently bei
 		hasSimpleAsLast[0] = True
 
 def autoSelfplay(): # user loads model, function cycles updating training set, creating challenger, and performing showdowns
-	modelPath = loadOrCreateModel("\\Rec_" + str(config.trainingRecursionCount) + "_Const_" + str(config.MCTSexploration)[:10].replace(".", "_") + "_" + ("Old" if config.origFormula else "New") + "Formula")
+	modelPath = loadOrCreateModel("\\Rec_" + str(config.trainingRecursionCount) + "_Const_" + str(config.MCTSexploration)[:10].replace(".", "_"))
 
 	while True:
 		createTrainingSetExploration(modelPath)
@@ -325,9 +323,12 @@ def generationTournament(): # Performs a round robin tournament in which each pr
 	modelPath, rec, const = loadModel()
 	#config.MCTSexploration = const
 	
-	champArrayVal = sorted([f for f in os.listdir(modelPath) if os.path.isfile(os.path.join(modelPath, f)) and f[0:12] == "prevChampVal"], key=lambda x: int(x[12:]))
-	champArrayPol = sorted([f for f in os.listdir(modelPath) if os.path.isfile(os.path.join(modelPath, f)) and f[0:12] == "prevChampPol"], key=lambda x: int(x[12:]))
-
+	if not os.path.isdir(modelPath + "\\prevChamp\\"):
+		print("No previous champions exist")
+		return
+	champArrayVal = sorted([f for f in os.listdir(modelPath + "\\prevChamp\\") if os.path.isfile(os.path.join(modelPath + "\\prevChamp\\", f)) and f[0:12] == "prevChampVal"], key=lambda x: int(x[12:]))
+	champArrayPol = sorted([f for f in os.listdir(modelPath + "\\prevChamp\\") if os.path.isfile(os.path.join(modelPath + "\\prevChamp\\", f)) and f[0:12] == "prevChampPol"], key=lambda x: int(x[12:]))
+	
 	try:
 		if len(champArrayPol) != len(champArrayVal):
 			raise Exception("Unequal count of Value and Policy Neural Nets")
@@ -345,24 +346,24 @@ def generationTournament(): # Performs a round robin tournament in which each pr
 	print("Beginning Tournament!")
 	
 	for i in range(len(champArrayVal)):
-		valNN1 = tf.keras.models.load_model(modelPath + "\\prevChampVal" + str(i + 1))
-		polNN1 = tf.keras.models.load_model(modelPath + "\\prevChampPol" + str(i + 1))
+		valNN1 = tf.keras.models.load_model(modelPath + "\\prevChamp\\prevChampVal" + str(i + 1))
+		polNN1 = tf.keras.models.load_model(modelPath + "\\prevChamp\\prevChampPol" + str(i + 1))
 		if i < len(champArrayVal):
 			for j in range(i + 1, len(champArrayVal)):
 				print(str(i + 1) + " vs " + str(j + 1))
-				valNN2 = tf.keras.models.load_model(modelPath + "\\prevChampVal" + str(j + 1))
-				polNN2 = tf.keras.models.load_model(modelPath + "\\prevChampPol" + str(j + 1))
+				valNN2 = tf.keras.models.load_model(modelPath + "\\prevChamp\\prevChampVal" + str(j + 1))
+				polNN2 = tf.keras.models.load_model(modelPath + "\\prevChamp\\prevChampPol" + str(j + 1))
 				
-				nn1Wins, nn2Wins, drawCount = head2Head(False, "Gen " + str(i + 1), "Gen " + str(j + 1), valNN1, polNN1, valNN2, polNN2, config.selfTournamentShowDownSize, rec)
+				nn1Wins, nn2Wins, drawCount = head2Head(False, "Gen " + str(i + 1), "Gen " + str(j + 1), valNN1, polNN1, valNN2, polNN2, config.selfTournamentShowDownSize, rec, custConst1 = (const if str(const)[:9] != str(config.MCTSexploration)[:9] else None))
 				
 				tournDict[str(i + 1) + "vs" + str(j + 1)] = {"nn1Wins": nn1Wins, "nn2Wins": nn2Wins, "Draws": drawCount}
 		
 		print(str(i + 1) + " vs champ") 
-		valNN2 = tf.keras.models.load_model(modelName + "\\the_value_champ")
-		polNN2 = tf.keras.models.load_model(modelName + "\\the_policy_champ")
+		valNN2 = tf.keras.models.load_model(modelPath + "\\the_value_champ")
+		polNN2 = tf.keras.models.load_model(modelPath + "\\the_policy_champ")
 		
 		nn1Wins, nn2Wins, drawCount = head2Head(False, "Gen " + str(i + 1), "Champ", valNN1, polNN1, valNN2, polNN2, config.selfTournamentShowDownSize, rec)
-		tournDict[str(i) + "vsChamp"] = {"nn1Wins": nn1Wins, "nn2Wins": nn2Wins, "Draws": drawCount}
+		tournDict[str(i + 1) + "vsChamp"] = {"nn1Wins": nn1Wins, "nn2Wins": nn2Wins, "Draws": drawCount}
 	
 	print("Completed Tournament! Final Results: ")
 	for key, val in tournDict.items():
@@ -371,10 +372,10 @@ def generationTournament(): # Performs a round robin tournament in which each pr
 	if config.getResponseFromList("Do you wish to save this result?", ('y','n')) == 'y':
 		if not os.path.exists(modelPath + "\\selfTournamentResults\\"):
 			os.makedirs(modelPath + "\\selfTournamentResults\\")
-		pickle.dump(tournDict, open(modelPath + "\\selfTournamentResults\\" + str(rec) + "const" + str(config.MCTSexploration) + "bo" + str(config.selfTournamentShowDownSize) + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"), "wb"))
-		
+		pickle.dump(tournDict, open(modelPath + "\\selfTournamentResults\\" + "rec_" + str(rec) + "_const_" + str(const) + "_bo" + str(config.selfTournamentShowDownSize).replace(".", "_") + "_" + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"), "wb"))
+	
 def loadTournamentResults(): # User can select any existing selfplay tournament results
-	resultsPath = loadModel() + "\\selfTournamentResults\\"
+	resultsPath = loadModel()[0] + "\\selfTournamentResults\\"
 	if not os.path.exists(resultsPath):
 		print("No tournament results exist")
 		return
